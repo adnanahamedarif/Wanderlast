@@ -6,6 +6,23 @@ import { usePathname } from "next/navigation";
 import { Menu, User, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "cn";
+import { authClient } from "@/lib/auth-client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button"
+
+
+
+
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -15,11 +32,11 @@ const navLinks = [
 ];
 
 const authLinks = [
-  { label: "Login", href: "#login" },
-  { label: "Sign Up", href: "#signup" },
+  { label: "Sign In", href: "/login" },
+  { label: "Sign Up", href: "/signup" },
 ];
 
-function Navbar() {
+export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -27,8 +44,17 @@ function Navbar() {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
 
+ const {  data: session } = authClient.useSession() 
+ const user = session?.user;
+
+
+ const handleSignOut =() =>{
+  authClient.signOut();
+ }
+
+
   return (
-    <header className="sticky top-0 z-30 bg-white">
+    <header className="sticky top-0 z-30 bg-white ">
       <nav
         aria-label="Main navigation"
         className="flex h-16 items-center justify-between px-5 md:h-20 md:px-8"
@@ -73,13 +99,33 @@ function Navbar() {
 
         <div className="hidden items-center justify-end gap-6 lg:flex">
           <Link
-            href="#profile"
+            href="/profile"
             className="flex items-center gap-1.5 text-sm font-medium tracking-wide text-neutral-900 transition-colors hover:text-brand"
           >
             <User className="size-4" />
             Profile
           </Link>
-          {authLinks.map((link) => (
+
+         {
+          user? <Popover>
+  <PopoverTrigger render={ <Avatar>
+  <AvatarImage referrerPolicy="no-referrer" src={user?.image as string} />
+  <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
+</Avatar>}>
+    Open Popover
+  </PopoverTrigger>
+  <PopoverContent>
+    <PopoverHeader>
+      <PopoverTitle>{user?.name}</PopoverTitle>
+      <PopoverDescription><p>{user?.email}</p>
+      <Button onClick={handleSignOut} variant="destructive">Signout</Button>
+      </PopoverDescription>
+
+    </PopoverHeader>
+  </PopoverContent>
+</Popover>:<>
+
+     {authLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
@@ -88,6 +134,13 @@ function Navbar() {
               {link.label}
             </Link>
           ))}
+
+</>
+         }
+
+
+
+     
         </div>
 
         <Link

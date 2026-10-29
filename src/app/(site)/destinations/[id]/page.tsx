@@ -12,13 +12,13 @@ import {
   Star,
 } from "lucide-react";
 import {
-  formatDestinationPrice,
   formatDestinationRating,
   getDestinationImage,
   type Destination,
 } from "@/lib/destinations";
 import EditDestination from "@/components/EditDestination";
 import DeleteDestination from "@/components/DeleteDestination";
+import BookingCard from "@/components/BookingCard";
 
 const defaultHighlights = [
   "Handpicked stays in prime locations",
@@ -28,11 +28,7 @@ const defaultHighlights = [
   "24/7 travel support",
 ];
 
-const bookingPerks = [
-  "Free cancellation up to 7 days",
-  "Travel insurance included",
-  "24/7 customer support",
-];
+
 
 const getDestination = cache(async (id: string): Promise<Destination | null> => {
   try {
@@ -51,20 +47,7 @@ const getDestination = cache(async (id: string): Promise<Destination | null> => 
   }
 });
 
-function formatDepartureDate(value?: string) {
-  if (!value) return "Flexible dates";
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(date);
-}
 
 export async function generateMetadata({
   params,
@@ -94,6 +77,9 @@ async function DestinationDetailsPage({
   const overview =
     destination.description?.trim() ||
     `Discover ${destination.destinationName} with a curated travel experience designed around the best of ${destination.country}.`;
+
+
+
 
   return (
     <main className="flex-1 bg-[#f7f7f8]">
@@ -191,42 +177,7 @@ async function DestinationDetailsPage({
             </section>
           </div>
 
-          <aside className="lg:sticky lg:top-24">
-            <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-              <p className="text-[11px] text-neutral-500">Starting from</p>
-              <p className="mt-1.5 text-3xl leading-none font-semibold text-brand md:text-[2rem]">
-                {formatDestinationPrice(destination.price)}
-              </p>
-              <p className="mt-1.5 text-[11px] text-neutral-500">per person</p>
-
-              <div className="mt-5 flex h-10 items-center rounded border border-neutral-200 bg-neutral-50 px-3 text-[13px] text-neutral-800">
-                {formatDepartureDate(destination.departureDate)}
-              </div>
-
-              <Link
-                href="/bookings"
-                className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded bg-brand text-[13px] font-medium text-white transition-colors hover:bg-brand-dark"
-              >
-                Book Now
-                <ArrowRight className="size-4" strokeWidth={1.8} />
-              </Link>
-
-              <ul className="mt-4 space-y-2.5">
-                {bookingPerks.map((perk) => (
-                  <li
-                    key={perk}
-                    className="flex items-center gap-2 text-[11px] text-neutral-600"
-                  >
-                    <Check
-                      className="size-3.5 shrink-0 text-emerald-600"
-                      strokeWidth={2.4}
-                    />
-                    {perk}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
+           <BookingCard destination={destination}/>
         </div>
       </div>
     </main>

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Josefin_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const JosefinSans = Josefin_Sans({
   subsets: ["latin"],
@@ -26,14 +26,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${JosefinSans.className} ${playfair.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Navbar />
-        
-        {children}
-        
-              <Footer />
+      <body className="flex min-h-full flex-col">
 
-        </body>
+        <Navbar/>
+        {children}
+        <Footer/>
+      </body>
 
     </html>
   );

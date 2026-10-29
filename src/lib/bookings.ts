@@ -20,6 +20,8 @@ const preferredDestinations = [
   "Cinque Terre Coastal Walk",
 ];
 
+const bookingsApiUrl = "http://localhost:8000/booking";
+
 /**
  * There is no bookings endpoint yet, so the page shows a small set of demo
  * bookings built from real destination records. Keeping this in one place
@@ -60,4 +62,97 @@ export function formatBookingDeparture(value?: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(date);
+}
+
+type RawRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is RawRecord {
+  return typeof value === "object" && value !== null;
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function asNumber(value: unknown): number | undefined {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function asPrice(value: unknown): number | string {
+  const number = asNumber(value);
+  return number === undefined ? 0 : number;
+}
+
+/**
+ * Bookings are stored by the API as a flat destination document with the
+ * traveller details mixed in, so the destination fields sit on the booking
+ * itself. A nested `destination` object is supported as well, which keeps the
+ * UI working if the API response shape changes.
+ */
+function toBooking(raw: RawRecord, index: number): Booking {
+  const nested = isRecord(raw.destination) ? raw.destination : raw;
+
+  const destination: Destination = {
+    _id: asString(nested._id) ?? asString(raw._id),
+    destinationName:
+      asString(nested.destinationName) ?? asString(nested.name) ?? "Untitled trip",
+    country: asString(nested.country) ?? "To be confirmed",
+    category: asString(nested.category) ?? "",
+    price: asPrice(nested.price),
+    duration: asString(nested.duration) ?? "",
+    departureDate:
+      asString(raw.departureDate) ?? asString(nested.departureDate),
+    imageUrl: asString(nested.imageUrl),
+    description: asString(nested.description),
+    rating: asNumber(nested.rating),
+    reviewCount: asNumber(nested.reviewCount),
+    highlights: Array.isArray(nested.highlights)
+      ? nested.highlights.filter(
+          (highlight): highlight is string => typeof highlight === "string",
+        )
+      : undefined,
+  };
+
+  const status: BookingStatus =
+    asString(raw.status)?.toLowerCase() === "pending" ? "Pending" : "Confirmed";
+
+  return {
+    id: asString(raw._id) ?? asString(raw.id) ?? `booking-${index + 1}`,
+    status,
+    destination,
+  };
+}
+
+export function normalizeBookings(data: unknown): Booking[] {
+  const list = Array.isArray(data)
+    ? data
+    : isRecord(data) && Array.isArray(data.bookings)
+      ? data.bookings
+      : [];
+
+  return list.filter(isRecord).map(toBooking);
+}
+
+/**
+ * Returns `null` when the API cannot be reached so the page can fall back to
+ * demo bookings, and an empty array when the user simply has no bookings.
+ */
+export async function getUserBookings(
+  email?: string,
+): Promise<Booking[] | null> {
+  if (!email) return [];
+
+  try {
+    const response = await fetch(
+      `${bookingsApiUrl}/${encodeURIComponent(email)}`,
+      { cache: "no-store" },
+    );
+
+    if (!response.ok) return null;
+
+    return normalizeBookings(await response.json());
+  } catch {
+    return null;
+  }
 }
